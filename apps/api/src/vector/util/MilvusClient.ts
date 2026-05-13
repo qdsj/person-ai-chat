@@ -1,4 +1,5 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, InternalServerErrorException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { MetricType, MilvusClient } from "@zilliz/milvus2-sdk-node";
 import { EmbeddingClient } from "./Embedding";
 import { PDF_COLLECTION_NAME } from "./const";
@@ -6,9 +7,12 @@ import { PDF_COLLECTION_NAME } from "./const";
 @Injectable()
 export class MilvusClientClass {
 	client: MilvusClient;
-	constructor(private readonly embeddingClient: EmbeddingClient) {
+	constructor(
+		private readonly embeddingClient: EmbeddingClient,
+		private readonly configService: ConfigService,
+	) {
 		this.client = new MilvusClient({
-			address: "127.0.0.1:19530",
+			address: this.getRequiredConfig("MILVUS_ADDRESS"),
 		});
 	}
 
@@ -33,5 +37,15 @@ export class MilvusClientClass {
 			console.log("查询失败", error);
 			return [];
 		}
+	}
+
+	private getRequiredConfig(key: string) {
+		const value = this.configService.get<string>(key);
+
+		if (!value) {
+			throw new InternalServerErrorException(`${key} 未配置。`);
+		}
+
+		return value;
 	}
 }

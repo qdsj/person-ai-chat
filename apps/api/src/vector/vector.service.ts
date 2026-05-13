@@ -1,7 +1,5 @@
-import { OpenAIEmbeddings } from "@langchain/openai";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Injectable } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { MilvusClient } from "@zilliz/milvus2-sdk-node";
 import { MilvusClientClass } from "./util/MilvusClient";
 import CustomPDFLoader from "./util/PDFLoader";
@@ -9,7 +7,6 @@ import { PdfCollection } from "./util/PdfCollection";
 import { SnowflakeIdGenerator } from "./util/SnowflakeIdGenerator";
 import { EmbeddingClient } from "./util/Embedding";
 
-const VECTOR_DIM = 128;
 const PDF_COLLECTION_NAME = "pdf_collection";
 
 @Injectable()
@@ -34,11 +31,11 @@ export class VectorService {
 	async storeTail(
 		data:
 			| {
-					id: number;
+					id: string;
 					vector: number[];
 					chunk_content: string;
 					created_at: string;
-					metadata: string;
+					metadata: Record<string, unknown>;
 			  }[]
 			| Record<string, any>[],
 	) {

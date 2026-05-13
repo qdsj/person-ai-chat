@@ -5,9 +5,7 @@ import {
 	Bot,
 	CheckCircle2,
 	Clock3,
-	FileAudio,
 	FileText,
-	ImageIcon,
 	LoaderCircle,
 	UploadCloud,
 } from "lucide-react";
@@ -60,26 +58,8 @@ type UploadHistoryItem = UploadedObject & {
 	uploadedAt: string;
 };
 
-const DEFAULT_API_BASE_URL = "http://localhost:3001";
-const OSS_PUBLIC_PATH_PREFIX = "https://dev.qdsj.top/aliyun/oss/person-site";
 const UPLOAD_HISTORY_STORAGE_KEY = "person-ai-chat:upload-history";
-const ACCEPTED_FILE_TYPES = [
-	"image/*",
-	"audio/*",
-	"video/*",
-	"application/pdf",
-	".pdf",
-	".doc",
-	".docx",
-	".ppt",
-	".pptx",
-	".xls",
-	".xlsx",
-	".txt",
-	".md",
-	".csv",
-	".json",
-].join(",");
+const ACCEPTED_FILE_TYPES = ["application/pdf", ".pdf", "text/plain", ".txt"].join(",");
 
 function getErrorMessage(payload: { message?: string | string[]; error?: string }, fallback: string) {
 	if (Array.isArray(payload.message)) {
@@ -115,8 +95,8 @@ function getObjectUrl(host: string, objectKey: string) {
 	return `${host}/${objectKey.split("/").map(encodeURIComponent).join("/")}`;
 }
 
-function getEchoPath(objectKey: string) {
-	return `${OSS_PUBLIC_PATH_PREFIX}/${objectKey}`;
+function getEchoPath(host: string, objectKey: string) {
+	return getObjectUrl(host, objectKey);
 }
 
 function formatUploadedAt(value: string) {
@@ -144,9 +124,11 @@ export default function UploadPage() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [fileInputKey, setFileInputKey] = useState(0);
 
-	const apiBaseUrl = useMemo(() => {
-		return process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL;
-	}, []);
+	const apiBaseUrl = useMemo(() => process.env.NEXT_PUBLIC_API_BASE_URL || "", []);
+	const ossPublicHost = useMemo(
+		() => process.env.NEXT_PUBLIC_OSS_PUBLIC_HOST?.replace(/\/+$/, "") || "",
+		[],
+	);
 
 	useEffect(() => {
 		const historyText = window.localStorage.getItem(UPLOAD_HISTORY_STORAGE_KEY);
@@ -182,6 +164,10 @@ export default function UploadPage() {
 	}
 
 	async function getOssSignature() {
+		if (!apiBaseUrl) {
+			throw new Error("缺少 NEXT_PUBLIC_API_BASE_URL 配置。");
+		}
+
 		const response = await fetch(`${apiBaseUrl}/api/oss/signature`);
 		const payload = (await response.json()) as OssSignatureResponse;
 
@@ -219,12 +205,16 @@ export default function UploadPage() {
 			originalName: item.file.name,
 			mimeType: item.file.type || "application/octet-stream",
 			size: item.file.size,
-			url: getObjectUrl(process.env.OSS_REVIEW_HOST || "", objectKey),
+			url: getObjectUrl(ossPublicHost || signature.host, objectKey),
 			source: item.source,
 		};
 	}
 
 	async function completeUpload(objects: UploadedObject[], textLength: number) {
+		if (!apiBaseUrl) {
+			throw new Error("缺少 NEXT_PUBLIC_API_BASE_URL 配置。");
+		}
+
 		const response = await fetch(`${apiBaseUrl}/api/upload`, {
 			method: "POST",
 			headers: {
@@ -276,12 +266,12 @@ export default function UploadPage() {
 			const signature = await getOssSignature();
 			const uploadedObjects = await Promise.all(uploadItems.map((item) => uploadToOss(signature, item)));
 			const payload = await completeUpload(uploadedObjects, trimmedText.length);
-			const uploadedAt = new Date().toISOString();
-			const nextHistory = uploadedObjects.map((object) => ({
-				...object,
-				echoPath: getEchoPath(object.objectKey),
-				uploadedAt,
-			}));
+				const uploadedAt = new Date().toISOString();
+				const nextHistory = uploadedObjects.map((object) => ({
+					...object,
+					echoPath: getEchoPath(ossPublicHost || signature.host, object.objectKey),
+					uploadedAt,
+				}));
 
 			setUploadHistory((currentHistory) => [...nextHistory, ...currentHistory]);
 			setResult(payload);
@@ -304,7 +294,7 @@ export default function UploadPage() {
 						<span>Person AI Chat</span>
 					</div>
 					<h1 id='upload-title'>上传分析材料</h1>
-					<p>上传图片、音频、PDF、文档，或直接粘贴一段文字，供后端 AI 分析使用。</p>
+					<p>上传 PDF、文本文件，或直接粘贴一段文字，供后端写入知识库并参与问答。</p>
 					<div className='page-actions'>
 						<Link href='/'>返回问答</Link>
 					</div>
@@ -315,7 +305,7 @@ export default function UploadPage() {
 						<label className='file-drop' htmlFor='files'>
 							<UploadCloud size={32} aria-hidden='true' />
 							<span>选择文件</span>
-							<small>支持图片、音频、视频、PDF、Office 文档、文本、表格等常见多模态输入</small>
+								<small>当前支持 PDF、TXT 文本文件，以及直接输入文字内容</small>
 						</label>
 						<input
 							key={fileInputKey}
@@ -358,20 +348,16 @@ export default function UploadPage() {
 							<h2>上传记录</h2>
 						</div>
 
-						<div className='format-list' aria-label='支持的内容类型'>
-							<span>
-								<ImageIcon size={16} aria-hidden='true' />
-								图片
-							</span>
-							<span>
-								<FileAudio size={16} aria-hidden='true' />
-								音频
-							</span>
-							<span>
-								<FileText size={16} aria-hidden='true' />
-								PDF / 文档
-							</span>
-						</div>
+							<div className='format-list' aria-label='支持的内容类型'>
+								<span>
+									<FileText size={16} aria-hidden='true' />
+									PDF
+								</span>
+								<span>
+									<FileText size={16} aria-hidden='true' />
+									TXT / 文字
+								</span>
+							</div>
 
 						{files.length > 0 || text.trim() ? (
 							<div className='pending-summary'>

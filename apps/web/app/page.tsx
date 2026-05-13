@@ -10,8 +10,6 @@ type ChatResponse = {
   error?: string;
 };
 
-const DEFAULT_API_BASE_URL = "http://localhost:3001";
-
 function getErrorMessage(payload: ChatResponse, fallback: string) {
   if (Array.isArray(payload.message)) {
     return payload.message.join("，");
@@ -26,9 +24,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const apiBaseUrl = useMemo(() => {
-    return process.env.NEXT_PUBLIC_API_BASE_URL || DEFAULT_API_BASE_URL;
-  }, []);
+  const apiBaseUrl = useMemo(() => process.env.NEXT_PUBLIC_API_BASE_URL || "", []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,6 +41,10 @@ export default function Home() {
     setAnswer("");
 
     try {
+      if (!apiBaseUrl) {
+        throw new Error("缺少 NEXT_PUBLIC_API_BASE_URL 配置。");
+      }
+
       const response = await fetch(`${apiBaseUrl}/api/chat`, {
         method: "POST",
         headers: {

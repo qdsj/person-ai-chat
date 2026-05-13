@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { DataType, IndexType, MetricType, MilvusClient } from "@zilliz/milvus2-sdk-node";
 import { MilvusClientClass } from "./MilvusClient";
 

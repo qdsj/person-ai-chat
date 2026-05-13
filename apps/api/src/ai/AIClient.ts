@@ -1,4 +1,4 @@
-import { BaseMessageLike, Message } from "@langchain/core/messages";
+import { BaseMessageLike } from "@langchain/core/messages";
 import { ChatOpenAI } from "@langchain/openai";
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
