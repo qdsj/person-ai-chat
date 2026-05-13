@@ -1,0 +1,38 @@
+{
+  "name": "@person-ai-chat/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "nest start --watch",
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "lint": "tsc --noEmit",
+    "nest": "nest"
+  },
+  "dependencies": {
+    "@langchain/community": "^1.1.28",
+    "@langchain/core": "^1.1.45",
+    "@langchain/openai": "^1.4.5",
+    "@nestjs/common": "^11.1.19",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.1.19",
+    "@nestjs/mapped-types": "*",
+    "@nestjs/platform-express": "^11.1.19",
+    "@zilliz/milvus2-sdk-node": "^3.0.0",
+    "ali-oss": "^6.23.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "pdf-parse": "^1.1.4",
+    "@langchain/textsplitters": "^1.0.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.21",
+    "@nestjs/schematics": "^11.1.0",
+    "@types/node": "^22.15.30",
+    "source-map-support": "^0.5.21",
+    "ts-loader": "^9.5.7",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.9.3"
+  }
+}
