@@ -1,0 +1,13 @@
+.git
+.github
+.next
+.pnpm-store
+node_modules
+apps/api/dist
+apps/api/node_modules
+apps/web/.next
+apps/web/node_modules
+**/.DS_Store
+**/.env
+**/.env.local
+**/.env.production

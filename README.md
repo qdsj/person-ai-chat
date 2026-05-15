@@ -96,6 +96,41 @@ pnpm build
 pnpm lint
 ```
 
+## Docker 构建
+
+前后端镜像都以仓库根目录作为构建上下文。
+
+### 1. 构建后端镜像
+
+```bash
+docker build -f apps/api/Dockerfile -t person-ai-chat-api .
+```
+
+运行时通过环境变量注入后端配置，例如：
+
+```bash
+docker run --rm -p 3001:3001 --env-file apps/api/.env person-ai-chat-api
+```
+
+### 2. 构建前端镜像
+
+前端使用 Next.js `standalone` 输出，`NEXT_PUBLIC_*` 变量需要在构建镜像时传入：
+
+```bash
+docker build \
+  -f apps/web/Dockerfile \
+  -t person-ai-chat-web \
+  --build-arg NEXT_PUBLIC_API_BASE_URL=http://localhost:3001 \
+  --build-arg NEXT_PUBLIC_OSS_PUBLIC_HOST=https://your-public-oss-host.example.com \
+  .
+```
+
+运行示例：
+
+```bash
+docker run --rm -p 3000:3000 person-ai-chat-web
+```
+
 ## 主要接口
 
 ### 问答接口
