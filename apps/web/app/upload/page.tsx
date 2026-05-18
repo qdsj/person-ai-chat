@@ -124,7 +124,6 @@ export default function UploadPage() {
 	const [isLoading, setIsLoading] = useState(false);
 	const [fileInputKey, setFileInputKey] = useState(0);
 
-	const apiBaseUrl = useMemo(() => process.env.NEXT_PUBLIC_API_BASE_URL || "", []);
 	const ossPublicHost = useMemo(
 		() => process.env.NEXT_PUBLIC_OSS_PUBLIC_HOST?.replace(/\/+$/, "") || "",
 		[],
@@ -164,11 +163,7 @@ export default function UploadPage() {
 	}
 
 	async function getOssSignature() {
-		if (!apiBaseUrl) {
-			throw new Error("缺少 NEXT_PUBLIC_API_BASE_URL 配置。");
-		}
-
-		const response = await fetch(`${apiBaseUrl}/api/oss/signature`);
+		const response = await fetch("/api/oss/signature");
 		const payload = (await response.json()) as OssSignatureResponse;
 
 		if (!response.ok || !payload.data) {
@@ -211,11 +206,7 @@ export default function UploadPage() {
 	}
 
 	async function completeUpload(objects: UploadedObject[], textLength: number) {
-		if (!apiBaseUrl) {
-			throw new Error("缺少 NEXT_PUBLIC_API_BASE_URL 配置。");
-		}
-
-		const response = await fetch(`${apiBaseUrl}/api/upload`, {
+		const response = await fetch("/api/upload", {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",

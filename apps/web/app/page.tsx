@@ -2,7 +2,7 @@
 
 import { AlertCircle, Bot, LoaderCircle, MessageCircle, Send } from "lucide-react";
 import Link from "next/link";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 
 type ChatResponse = {
   answer?: string;
@@ -24,8 +24,6 @@ export default function Home() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const apiBaseUrl = useMemo(() => process.env.NEXT_PUBLIC_API_BASE_URL || "", []);
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -41,11 +39,7 @@ export default function Home() {
     setAnswer("");
 
     try {
-      if (!apiBaseUrl) {
-        throw new Error("缺少 NEXT_PUBLIC_API_BASE_URL 配置。");
-      }
-
-      const response = await fetch(`${apiBaseUrl}/api/chat`, {
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
