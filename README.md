@@ -70,7 +70,6 @@ cp apps/web/.env.example apps/web/.env.local
 
 需要按实际环境填写：
 
-- `NEXT_PUBLIC_API_BASE_URL`
 - `NEXT_PUBLIC_OSS_PUBLIC_HOST`
 
 ## 本地开发
@@ -120,7 +119,6 @@ docker run --rm -p 3001:3001 --env-file apps/api/.env person-ai-chat-api
 docker build \
   -f apps/web/Dockerfile \
   -t person-ai-chat-web \
-  --build-arg NEXT_PUBLIC_API_BASE_URL=http://localhost:3001 \
   --build-arg NEXT_PUBLIC_OSS_PUBLIC_HOST=https://your-public-oss-host.example.com \
   .
 ```
