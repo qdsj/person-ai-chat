@@ -13,6 +13,7 @@ export class MilvusClientClass {
 	) {
 		this.client = new MilvusClient({
 			address: this.getRequiredConfig("MILVUS_ADDRESS"),
+			token: this.getRequiredConfig("MILVUS_TOKEN"),
 		});
 	}
 
