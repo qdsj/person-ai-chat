@@ -1,22 +1,9 @@
 "use client";
 
+import { chat } from "@/api";
 import { AlertCircle, Bot, LoaderCircle, MessageCircle, Send } from "lucide-react";
 import Link from "next/link";
 import { FormEvent, useState } from "react";
-
-type ChatResponse = {
-  answer?: string;
-  message?: string | string[];
-  error?: string;
-};
-
-function getErrorMessage(payload: ChatResponse, fallback: string) {
-  if (Array.isArray(payload.message)) {
-    return payload.message.join("，");
-  }
-
-  return payload.message || payload.error || fallback;
-}
 
 export default function Home() {
   const [question, setQuestion] = useState("");
@@ -39,19 +26,7 @@ export default function Home() {
     setAnswer("");
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ question: trimmedQuestion }),
-      });
-      const payload = (await response.json()) as ChatResponse;
-
-      if (!response.ok) {
-        throw new Error(getErrorMessage(payload, "请求失败，请稍后重试。"));
-      }
-
+      const payload = await chat({ question: trimmedQuestion });
       setAnswer(payload.answer || "后端没有返回答案。");
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "请求失败，请稍后重试。");

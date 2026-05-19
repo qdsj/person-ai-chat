@@ -1,6 +1,15 @@
 "use client";
 
 import {
+	completeUpload,
+	getObjectUrl,
+	getOssSignature,
+	uploadFileToOss,
+	type UploadItem,
+	type UploadedObject,
+	type UploadResponse,
+} from "@/api";
+import {
 	AlertCircle,
 	Bot,
 	CheckCircle2,
@@ -12,47 +21,6 @@ import {
 import Link from "next/link";
 import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
 
-type OssSignature = {
-	host: string;
-	dir: string;
-	policy: string;
-	signature: string;
-	x_oss_credential: string;
-	x_oss_date: string;
-	x_oss_signature_version: "OSS4-HMAC-SHA256";
-	security_token: string;
-};
-
-type OssSignatureResponse = {
-	status?: number;
-	message?: string | string[];
-	data?: OssSignature;
-	error?: string;
-};
-
-type UploadedObject = {
-	objectKey: string;
-	originalName: string;
-	mimeType: string;
-	size: number;
-	url: string;
-	source: "file" | "text";
-};
-
-type UploadResponse = {
-	message?: string | string[];
-	uploadId?: string;
-	fileCount?: number;
-	textLength?: number;
-	objects?: UploadedObject[];
-	error?: string;
-};
-
-type UploadItem = {
-	file: File;
-	source: "file" | "text";
-};
-
 type UploadHistoryItem = UploadedObject & {
 	echoPath: string;
 	uploadedAt: string;
@@ -60,14 +28,6 @@ type UploadHistoryItem = UploadedObject & {
 
 const UPLOAD_HISTORY_STORAGE_KEY = "person-ai-chat:upload-history";
 const ACCEPTED_FILE_TYPES = ["application/pdf", ".pdf", "text/plain", ".txt"].join(",");
-
-function getErrorMessage(payload: { message?: string | string[]; error?: string }, fallback: string) {
-	if (Array.isArray(payload.message)) {
-		return payload.message.join("，");
-	}
-
-	return payload.message || payload.error || fallback;
-}
 
 function formatFileSize(size: number) {
 	if (size < 1024) {
@@ -79,24 +39,6 @@ function formatFileSize(size: number) {
 	}
 
 	return `${(size / 1024 / 1024).toFixed(1)} MB`;
-}
-
-function createObjectKey(dir: string, file: File) {
-	const id =
-		typeof crypto !== "undefined" && "randomUUID" in crypto
-			? crypto.randomUUID()
-			: `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-	const safeName = file.name.trim().replace(/[^\w.\-\u4e00-\u9fa5]+/g, "-");
-
-	return `${dir}${id}-${safeName || "upload"}`;
-}
-
-function getObjectUrl(host: string, objectKey: string) {
-	return `${host}/${objectKey.split("/").map(encodeURIComponent).join("/")}`;
-}
-
-function getEchoPath(host: string, objectKey: string) {
-	return getObjectUrl(host, objectKey);
 }
 
 function formatUploadedAt(value: string) {
@@ -162,69 +104,6 @@ export default function UploadPage() {
 		setError("");
 	}
 
-	async function getOssSignature() {
-		const response = await fetch("/api/oss/signature");
-		const payload = (await response.json()) as OssSignatureResponse;
-
-		if (!response.ok || !payload.data) {
-			throw new Error(getErrorMessage(payload, "获取 OSS 上传签名失败。"));
-		}
-
-		return payload.data;
-	}
-
-	async function uploadToOss(signature: OssSignature, item: UploadItem): Promise<UploadedObject> {
-		const objectKey = createObjectKey(signature.dir, item.file);
-		const formData = new FormData();
-
-		formData.append("key", objectKey);
-		formData.append("policy", signature.policy);
-		formData.append("x-oss-signature-version", signature.x_oss_signature_version);
-		formData.append("x-oss-credential", signature.x_oss_credential);
-		formData.append("x-oss-date", signature.x_oss_date);
-		formData.append("x-oss-security-token", signature.security_token);
-		formData.append("x-oss-signature", signature.signature);
-		formData.append("file", item.file);
-
-		const response = await fetch(signature.host, {
-			method: "POST",
-			body: formData,
-		});
-
-		if (!response.ok) {
-			throw new Error(`${item.file.name} 上传到 OSS 失败。`);
-		}
-
-		return {
-			objectKey,
-			originalName: item.file.name,
-			mimeType: item.file.type || "application/octet-stream",
-			size: item.file.size,
-			url: getObjectUrl(ossPublicHost || signature.host, objectKey),
-			source: item.source,
-		};
-	}
-
-	async function completeUpload(objects: UploadedObject[], textLength: number) {
-		const response = await fetch("/api/upload", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				objects,
-				textLength,
-			}),
-		});
-		const payload = (await response.json()) as UploadResponse;
-
-		if (!response.ok) {
-			throw new Error(getErrorMessage(payload, "登记上传结果失败。"));
-		}
-
-		return payload;
-	}
-
 	async function handleSubmit(event: FormEvent<HTMLFormElement>) {
 		event.preventDefault();
 
@@ -255,14 +134,25 @@ export default function UploadPage() {
 
 		try {
 			const signature = await getOssSignature();
-			const uploadedObjects = await Promise.all(uploadItems.map((item) => uploadToOss(signature, item)));
-			const payload = await completeUpload(uploadedObjects, trimmedText.length);
-				const uploadedAt = new Date().toISOString();
-				const nextHistory = uploadedObjects.map((object) => ({
-					...object,
-					echoPath: getEchoPath(ossPublicHost || signature.host, object.objectKey),
-					uploadedAt,
-				}));
+			const uploadedObjects = await Promise.all(
+				uploadItems.map((item) =>
+					uploadFileToOss({
+						signature,
+						item,
+						publicHost: ossPublicHost,
+					}),
+				),
+			);
+			const payload = await completeUpload({
+				objects: uploadedObjects,
+				textLength: trimmedText.length,
+			});
+			const uploadedAt = new Date().toISOString();
+			const nextHistory = uploadedObjects.map((object) => ({
+				...object,
+				echoPath: getObjectUrl(ossPublicHost || signature.host, object.objectKey),
+				uploadedAt,
+			}));
 
 			setUploadHistory((currentHistory) => [...nextHistory, ...currentHistory]);
 			setResult(payload);
@@ -296,7 +186,7 @@ export default function UploadPage() {
 						<label className='file-drop' htmlFor='files'>
 							<UploadCloud size={32} aria-hidden='true' />
 							<span>选择文件</span>
-								<small>当前支持 PDF、TXT 文本文件，以及直接输入文字内容</small>
+							<small>当前支持 PDF、TXT 文本文件，以及直接输入文字内容</small>
 						</label>
 						<input
 							key={fileInputKey}
@@ -339,16 +229,16 @@ export default function UploadPage() {
 							<h2>上传记录</h2>
 						</div>
 
-							<div className='format-list' aria-label='支持的内容类型'>
-								<span>
-									<FileText size={16} aria-hidden='true' />
-									PDF
-								</span>
-								<span>
-									<FileText size={16} aria-hidden='true' />
-									TXT / 文字
-								</span>
-							</div>
+						<div className='format-list' aria-label='支持的内容类型'>
+							<span>
+								<FileText size={16} aria-hidden='true' />
+								PDF
+							</span>
+							<span>
+								<FileText size={16} aria-hidden='true' />
+								TXT / 文字
+							</span>
+						</div>
 
 						{files.length > 0 || text.trim() ? (
 							<div className='pending-summary'>
