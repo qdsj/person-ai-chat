@@ -216,15 +216,17 @@ export default function UploadPage() {
 		<main className='page-shell'>
 			<section className='workspace' aria-labelledby='upload-title'>
 				<div className='intro'>
-					<div className='product-mark'>
-						<Bot size={22} aria-hidden='true' />
-						<span>Person AI Chat</span>
-					</div>
-					<div className='session-banner'>
-						<span>{user.name || user.email}</span>
-						<button type='button' className='secondary-button' onClick={handleLogout}>
-							退出登录
-						</button>
+					<div className='intro-head'>
+						<div className='product-mark'>
+							<Bot size={22} aria-hidden='true' />
+							<span>Person AI Chat</span>
+						</div>
+						<div className='session-banner'>
+							<span>{user.name || user.email}</span>
+							<button type='button' className='secondary-button' onClick={handleLogout}>
+								退出登录
+							</button>
+						</div>
 					</div>
 					<h1 id='upload-title'>上传分析材料</h1>
 					<p>上传 PDF、文本文件，或直接粘贴一段文字。上传记录会写入 MySQL，并且只归属于当前账号。</p>

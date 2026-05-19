@@ -92,15 +92,17 @@ export default function Home() {
 		<main className='page-shell'>
 			<section className='workspace' aria-labelledby='page-title'>
 				<div className='intro'>
-					<div className='product-mark'>
-						<Bot size={22} aria-hidden='true' />
-						<span>Person AI Chat</span>
-					</div>
-					<div className='session-banner'>
-						<span>{user.name || user.email}</span>
-						<button type='button' className='secondary-button' onClick={handleLogout}>
-							退出登录
-						</button>
+					<div className='intro-head'>
+						<div className='product-mark'>
+							<Bot size={22} aria-hidden='true' />
+							<span>Person AI Chat</span>
+						</div>
+						<div className='session-banner'>
+							<span>{user.name || user.email}</span>
+							<button type='button' className='secondary-button' onClick={handleLogout}>
+								退出登录
+							</button>
+						</div>
 					</div>
 					<h1 id='page-title'>向知识库提问</h1>
 					<p>输入你的问题，后端会只在当前账号自己的知识库资料中检索并生成回答。</p>
