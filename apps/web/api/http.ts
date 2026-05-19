@@ -12,6 +12,26 @@ type RequestOptions = Omit<RequestInit, "body"> & {
 	errorMessage?: string;
 };
 
+const API_BASE_URL = (process.env.BASE_URL || "").replace(/\/+$/, "");
+
+function isAbsoluteUrl(path: string) {
+	return /^https?:\/\//i.test(path);
+}
+
+function resolveRequestUrl(path: string) {
+	if (isAbsoluteUrl(path)) {
+		return path;
+	}
+
+	const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+	if (!API_BASE_URL) {
+		return normalizedPath;
+	}
+
+	return `${API_BASE_URL}${normalizedPath}`;
+}
+
 function isRawRequestBody(body: RequestBody) {
 	return (
 		typeof body === "string" ||
@@ -82,7 +102,7 @@ export async function request<T>(path: string, options: RequestOptions = {}) {
 	const { body, errorMessage = "请求失败，请稍后重试。", ...restOptions } = options;
 	const headers = new Headers(restOptions.headers);
 	const requestBody = buildRequestBody(body, headers);
-	const response = await fetch(path, {
+	const response = await fetch(resolveRequestUrl(path), {
 		...restOptions,
 		headers,
 		body: requestBody,

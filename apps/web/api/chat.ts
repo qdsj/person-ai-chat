@@ -11,7 +11,7 @@ export type ChatResponse = {
 };
 
 export function chat(data: ChatRequest) {
-	return post<ChatResponse, ChatRequest>("/api/chat", data, {
+	return post<ChatResponse, ChatRequest>("/chat", data, {
 		errorMessage: "请求失败，请稍后重试。",
 	});
 }

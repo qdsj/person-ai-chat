@@ -16,7 +16,7 @@ export type CompleteUploadRequest = {
 };
 
 export function completeUpload(data: CompleteUploadRequest) {
-	return post<UploadResponse, CompleteUploadRequest>("/api/upload", data, {
+	return post<UploadResponse, CompleteUploadRequest>("/upload", data, {
 		errorMessage: "登记上传结果失败。",
 	});
 }

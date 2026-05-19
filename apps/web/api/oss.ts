@@ -53,7 +53,7 @@ export function getObjectUrl(host: string, objectKey: string) {
 }
 
 export async function getOssSignature() {
-	const payload = await get<OssSignatureResponse>("/api/oss/signature", {
+	const payload = await get<OssSignatureResponse>("/oss/signature", {
 		errorMessage: "获取 OSS 上传签名失败。",
 	});
 
