@@ -1,5 +1,17 @@
-import { BadRequestException, Body, Controller, Post, UploadedFiles, UseInterceptors } from "@nestjs/common";
+import {
+	BadRequestException,
+	Body,
+	Controller,
+	Get,
+	Post,
+	UploadedFiles,
+	UseGuards,
+	UseInterceptors,
+} from "@nestjs/common";
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
+import { AuthGuard } from "src/auth/auth.guard";
+import type { AuthenticatedUser } from "src/auth/auth.types";
+import { CurrentUser } from "src/auth/current-user.decorator";
 import { UploadService, UploadedObjectSummary } from "./upload.service";
 
 type CompleteUploadBody = {
@@ -11,14 +23,23 @@ type UploadedFile = {
 	originalname: string;
 	mimetype: string;
 	size: number;
+	buffer: Buffer;
 };
 
 @Controller("api/upload")
+@UseGuards(AuthGuard)
 export class UploadController {
 	constructor(private readonly uploadService: UploadService) {}
 
+	@Get()
+	async getHistory(@CurrentUser() user: AuthenticatedUser) {
+		return {
+			items: await this.uploadService.listUploads(user.id),
+		};
+	}
+
 	@Post()
-	async completeUpload(@Body() body: CompleteUploadBody = {}) {
+	async completeUpload(@CurrentUser() user: AuthenticatedUser, @Body() body: CompleteUploadBody = {}) {
 		const objects = this.parseUploadedObjects(body.objects);
 		const textLength = typeof body.textLength === "number" && body.textLength > 0 ? body.textLength : 0;
 
@@ -27,6 +48,7 @@ export class UploadController {
 		}
 
 		return this.uploadService.createUpload({
+			userId: user.id,
 			objects,
 			textLength,
 		});
@@ -34,22 +56,21 @@ export class UploadController {
 
 	@Post("server")
 	@UseInterceptors(AnyFilesInterceptor())
-	async serverUpload(@UploadedFiles() files: UploadedFile[] = [], @Body("text") text = "") {
+	async serverUpload(
+		@CurrentUser() user: AuthenticatedUser,
+		@UploadedFiles() files: UploadedFile[] = [],
+		@Body("text") text = "",
+	) {
 		const trimmedText = typeof text === "string" ? text.trim() : "";
 
 		if (files.length === 0 && !trimmedText) {
 			throw new BadRequestException("请上传文件或输入文字。");
 		}
 
-		return this.uploadService.createUpload({
-			objects: files.map((file) => ({
-				objectKey: "",
-				originalName: file.originalname,
-				mimeType: file.mimetype,
-				size: file.size,
-				source: "file",
-			})),
-			textLength: trimmedText.length,
+		return this.uploadService.createServerUpload({
+			userId: user.id,
+			files,
+			text: trimmedText,
 		});
 	}
 

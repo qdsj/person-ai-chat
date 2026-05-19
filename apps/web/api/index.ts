@@ -1,3 +1,4 @@
+export * from "./auth";
 export * from "./chat";
 export * from "./http";
 export * from "./oss";

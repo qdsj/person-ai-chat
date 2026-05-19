@@ -6,8 +6,14 @@ import CustomPDFLoader from "./util/PDFLoader";
 import { PdfCollection } from "./util/PdfCollection";
 import { SnowflakeIdGenerator } from "./util/SnowflakeIdGenerator";
 import { EmbeddingClient } from "./util/Embedding";
+import { PDF_COLLECTION_NAME } from "./util/const";
 
-const PDF_COLLECTION_NAME = "pdf_collection";
+type VectorRecordContext = {
+	userId: string;
+	objectKey: string;
+	originalName: string;
+	source: "file" | "text";
+};
 
 @Injectable()
 export class VectorService {
@@ -55,14 +61,14 @@ export class VectorService {
 		});
 	}
 
-	async storeFile(file: Blob, fileType: "text" | "pdf") {
+	async storeFile(file: Blob, fileType: "text" | "pdf", context: VectorRecordContext) {
 		await this.storeInit();
 		// 判断
 		let data;
 		if (fileType === "text") {
-			data = await this.getTextDocumentData(file);
+			data = await this.getTextDocumentData(file, context);
 		} else if (fileType === "pdf") {
-			data = await this.getPdfDocumentData(file);
+			data = await this.getPdfDocumentData(file, context);
 		}
 
 		if (!data) return;
@@ -85,17 +91,27 @@ export class VectorService {
 	}
 
 	// 获取pdf document
-	async getPdfDocumentData(file: Blob) {
+	async getPdfDocumentData(file: Blob, context: VectorRecordContext) {
 		const documents = await this.pdfLoader(file);
 
 		const data = await Promise.all(
 			documents.map(async (document) => {
 				return {
 					id: this.idGenerator.nextId(),
+					user_id: context.userId,
 					vector: await this.embeddingClient.embeddingText(document.pageContent),
 					chunk_content: document.pageContent,
 					created_at: new Date().toISOString(),
-					metadata: document.metadata,
+					object_key: context.objectKey,
+					original_name: context.originalName,
+					source: context.source,
+					metadata: {
+						...document.metadata,
+						userId: context.userId,
+						objectKey: context.objectKey,
+						originalName: context.originalName,
+						source: context.source,
+					},
 				};
 			}),
 		);
@@ -104,16 +120,26 @@ export class VectorService {
 	}
 
 	// 获取文本 document
-	async getTextDocumentData(file: Blob) {
+	async getTextDocumentData(file: Blob, context: VectorRecordContext) {
 		const data = await this.textLoader(file);
 		return Promise.all(
 			data.map(async (item) => {
 				return {
 					id: this.idGenerator.nextId(),
+					user_id: context.userId,
 					vector: await this.embeddingClient.embeddingText(item.pageContent),
 					chunk_content: item.pageContent,
 					created_at: new Date().toISOString(),
-					metadata: item.metadata,
+					object_key: context.objectKey,
+					original_name: context.originalName,
+					source: context.source,
+					metadata: {
+						...item.metadata,
+						userId: context.userId,
+						objectKey: context.objectKey,
+						originalName: context.originalName,
+						source: context.source,
+					},
 				};
 			}),
 		);

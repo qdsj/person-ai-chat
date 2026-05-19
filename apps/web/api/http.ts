@@ -104,6 +104,7 @@ export async function request<T>(path: string, options: RequestOptions = {}) {
 	const requestBody = buildRequestBody(body, headers);
 	const response = await fetch(resolveRequestUrl(path), {
 		...restOptions,
+		credentials: restOptions.credentials ?? "include",
 		headers,
 		body: requestBody,
 	});

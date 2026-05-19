@@ -65,10 +65,11 @@ const { policy2Str } = require("ali-oss/lib/common/utils/policy2Str") as PolicyH
 export class OssService {
 	constructor(private readonly configService: ConfigService) {}
 
-	async getTempSignature(): Promise<OssPostSignature> {
+	async getTempSignature(userId: number): Promise<OssPostSignature> {
 		const bucket = this.getRequiredConfig("BUCKET_NAME");
 		const region = this.normalizeOssRegion(this.configService.get<string>("OSS_REGION") || "oss-cn-shanghai");
-		const uploadDir = this.normalizeDir(this.configService.get<string>("OSS_UPLOAD_DIR") || "uploads/");
+		const uploadRootDir = this.normalizeDir(this.configService.get<string>("OSS_UPLOAD_DIR") || "uploads/");
+		const uploadDir = this.normalizeDir(`${uploadRootDir}${userId}/`);
 		const expireSeconds = Number(this.configService.get<string>("OSS_POST_EXPIRE_SECONDS") || 600);
 		const stsDurationSeconds = Number(this.configService.get<string>("OSS_STS_DURATION_SECONDS") || 3600);
 		const credentials = await this.assumeUploadRole(bucket, uploadDir, stsDurationSeconds);
@@ -118,8 +119,8 @@ export class OssService {
 		};
 	}
 
-	GenerateSignature() {
-		return this.getTempSignature();
+	GenerateSignature(userId: number) {
+		return this.getTempSignature(userId);
 	}
 
 	private async assumeUploadRole(bucket: string, uploadDir: string, durationSeconds: number): Promise<StsCredentials> {

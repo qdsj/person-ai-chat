@@ -22,7 +22,7 @@ export class MilvusClientClass {
 	}
 
 	// 查询milvus数据库
-	async searchPdfMilvus(query: string) {
+	async searchPdfMilvus(query: string, userId: number) {
 		try {
 			const result = await this.client.search({
 				collection_name: PDF_COLLECTION_NAME,
@@ -30,6 +30,7 @@ export class MilvusClientClass {
 				data: await Promise.all([this.embeddingClient.embeddingText(query)]),
 				limit: 5,
 				output_fields: ["chunk_content"],
+				filter: `user_id == "${userId}"`,
 				metric_type: MetricType.COSINE,
 			});
 

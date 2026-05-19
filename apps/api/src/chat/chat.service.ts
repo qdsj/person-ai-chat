@@ -14,11 +14,17 @@ export class ChatService {
 		private readonly milvusClientClass: MilvusClientClass,
 	) {}
 
-	async ask(question: string) {
-		const results = await this.milvusClientClass.searchPdfMilvus(question);
+	async ask(question: string, userId: number) {
+		const results = await this.milvusClientClass.searchPdfMilvus(question, userId);
 		const contents = results.map((item) => {
 			return item.chunk_content;
 		});
+
+		if (contents.length === 0) {
+			return {
+				answer: "当前账号下还没有可检索的资料，请先上传文件后再提问。",
+			};
+		}
 
 		const messages = [
 			new SystemMessage(`

@@ -1,9 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { DataType, IndexType, MetricType, MilvusClient } from "@zilliz/milvus2-sdk-node";
+import { PDF_COLLECTION_NAME, VECTOR_DIM } from "./const";
 import { MilvusClientClass } from "./MilvusClient";
-
-export const PDF_COLLECTION_NAME = "pdf_collection";
-const VECTOR_DIM = 128;
 
 @Injectable()
 export class PdfCollection {
@@ -30,8 +28,12 @@ export class PdfCollection {
 			collection_name: PDF_COLLECTION_NAME,
 			fields: [
 				{ name: "id", data_type: DataType.Int64, is_primary_key: true },
+				{ name: "user_id", data_type: DataType.VarChar, max_length: 64 },
 				{ name: "vector", data_type: DataType.FloatVector, dim: VECTOR_DIM },
 				{ name: "metadata", data_type: DataType.JSON },
+				{ name: "object_key", data_type: DataType.VarChar, max_length: 1024 },
+				{ name: "original_name", data_type: DataType.VarChar, max_length: 255 },
+				{ name: "source", data_type: DataType.VarChar, max_length: 20 },
 				{ name: "chunk_content", data_type: DataType.VarChar, max_length: 65535 },
 				{ name: "created_at", data_type: DataType.Timestamptz },
 			],

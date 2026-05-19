@@ -1,4 +1,7 @@
-import { BadRequestException, Body, Controller, Post } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Post, UseGuards } from "@nestjs/common";
+import { AuthGuard } from "src/auth/auth.guard";
+import { CurrentUser } from "src/auth/current-user.decorator";
+import type { AuthenticatedUser } from "src/auth/auth.types";
 import { ChatService } from "./chat.service";
 
 type ChatRequestBody = {
@@ -7,14 +10,15 @@ type ChatRequestBody = {
 
 @Controller("api/chat")
 export class ChatController {
-  constructor(private readonly chatService: ChatService) {}
+	constructor(private readonly chatService: ChatService) {}
 
-  @Post()
-  async ask(@Body() body: ChatRequestBody) {
-    if (typeof body.question !== "string" || !body.question.trim()) {
-      throw new BadRequestException("question 不能为空。");
-    }
+	@Post()
+	@UseGuards(AuthGuard)
+	async ask(@CurrentUser() user: AuthenticatedUser, @Body() body: ChatRequestBody) {
+		if (typeof body.question !== "string" || !body.question.trim()) {
+			throw new BadRequestException("question 不能为空。");
+		}
 
-    return this.chatService.ask(body.question.trim());
-  }
+		return this.chatService.ask(body.question.trim(), user.id);
+	}
 }

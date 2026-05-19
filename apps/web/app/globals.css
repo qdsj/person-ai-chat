@@ -38,7 +38,8 @@ body {
 }
 
 button,
-textarea {
+textarea,
+input {
   font: inherit;
 }
 
@@ -207,6 +208,25 @@ button:hover:not(:disabled) {
 button:disabled {
   cursor: not-allowed;
   opacity: 0.76;
+}
+
+input {
+  width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+  padding: 0 14px;
+  color: var(--text);
+  background: #fbfcfa;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
 .answer-panel {
@@ -433,6 +453,73 @@ button:disabled {
 
 .spin {
   animation: spin 900ms linear infinite;
+}
+
+.session-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 8px 10px 8px 14px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.secondary-button {
+  width: auto;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--accent-strong);
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.loading-copy {
+  display: grid;
+  min-height: 240px;
+  place-items: center;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.auth-workspace {
+  width: min(520px, 100%);
+}
+
+.auth-panel {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.auth-copy {
+  margin-top: 14px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.auth-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.auth-form label {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.auth-actions {
+  margin-top: 18px;
 }
 
 @keyframes spin {
