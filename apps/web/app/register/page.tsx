@@ -4,9 +4,9 @@ import { getMe, register } from "@/api";
 import { AlertCircle, Bot, LoaderCircle, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 
-export default function RegisterPage() {
+function RegisterPageContent() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const nextPath = searchParams.get("next") || "/";
@@ -138,5 +138,20 @@ export default function RegisterPage() {
 				</div>
 			</section>
 		</main>
+	);
+}
+
+export default function RegisterPage() {
+	return (
+		<Suspense
+			fallback={
+				<main className='page-shell'>
+					<section className='workspace'>
+						<p className='loading-copy'>正在准备注册页...</p>
+					</section>
+				</main>
+			}>
+			<RegisterPageContent />
+		</Suspense>
 	);
 }

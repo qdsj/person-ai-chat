@@ -4,9 +4,9 @@ import { getMe, login } from "@/api";
 import { AlertCircle, Bot, LoaderCircle, LogIn } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 
-export default function LoginPage() {
+function LoginPageContent() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const nextPath = searchParams.get("next") || "/";
@@ -126,5 +126,20 @@ export default function LoginPage() {
 				</div>
 			</section>
 		</main>
+	);
+}
+
+export default function LoginPage() {
+	return (
+		<Suspense
+			fallback={
+				<main className='page-shell'>
+					<section className='workspace'>
+						<p className='loading-copy'>正在准备登录页...</p>
+					</section>
+				</main>
+			}>
+			<LoginPageContent />
+		</Suspense>
 	);
 }
