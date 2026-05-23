@@ -1,4 +1,5 @@
 import { BadRequestException, Body, Controller, Get, Post, Res, UseGuards } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { AUTH_COOKIE_NAME } from "./auth.constants";
 import { AuthGuard } from "./auth.guard";
 import { AuthService } from "./auth.service";
@@ -16,9 +17,14 @@ type ResponseWithCookieMethods = {
 	clearCookie: (name: string, options: Record<string, unknown>) => void;
 };
 
+type SameSiteValue = "lax" | "strict" | "none";
+
 @Controller("api/auth")
 export class AuthController {
-	constructor(private readonly authService: AuthService) {}
+	constructor(
+		private readonly authService: AuthService,
+		private readonly configService: ConfigService,
+	) {}
 
 	@Post("register")
 	async register(@Body() body: AuthBody, @Res({ passthrough: true }) response: ResponseWithCookieMethods) {
@@ -75,9 +81,7 @@ export class AuthController {
 	private setAuthCookie(response: ResponseWithCookieMethods, token: string) {
 		response.cookie(AUTH_COOKIE_NAME, token, {
 			httpOnly: true,
-			sameSite: "lax",
-			secure: process.env.NODE_ENV === "production",
-			path: "/",
+			...this.getCookieOptions(),
 			maxAge: 7 * 24 * 60 * 60 * 1000,
 		});
 	}
@@ -85,9 +89,33 @@ export class AuthController {
 	private clearAuthCookie(response: ResponseWithCookieMethods) {
 		response.clearCookie(AUTH_COOKIE_NAME, {
 			httpOnly: true,
-			sameSite: "lax",
-			secure: process.env.NODE_ENV === "production",
-			path: "/",
+			...this.getCookieOptions(),
 		});
+	}
+
+	private getCookieOptions() {
+		const secure = this.getBooleanConfig("AUTH_COOKIE_SECURE", process.env.NODE_ENV === "production");
+		const configuredSameSite = (this.configService.get<string>("AUTH_COOKIE_SAME_SITE") || "lax").toLowerCase();
+		const sameSite = (["lax", "strict", "none"].includes(configuredSameSite)
+			? configuredSameSite
+			: "lax") as SameSiteValue;
+		const domain = this.configService.get<string>("AUTH_COOKIE_DOMAIN")?.trim() || undefined;
+		const path = this.configService.get<string>("AUTH_COOKIE_PATH")?.trim() || "/";
+
+		return {
+			secure,
+			sameSite,
+			path,
+			...(domain ? { domain } : {}),
+		};
+	}
+
+	private getBooleanConfig(key: string, defaultValue: boolean) {
+		const rawValue = this.configService.get<string>(key);
+		if (!rawValue) {
+			return defaultValue;
+		}
+
+		return rawValue.toLowerCase() === "true";
 	}
 }
